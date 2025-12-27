@@ -17,6 +17,18 @@ function extractYouTubeId(url: string): string | null {
   return null;
 }
 
+function extractGoogleDriveId(url: string): string | null {
+  const patterns = [
+    /drive\.google\.com\/file\/d\/([a-zA-Z0-9-_]+)/,
+    /drive\.google\.com\/open\?id=([a-zA-Z0-9-_]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
 function isVideoUrl(url: string): boolean {
   return /\.(mp4|webm|ogv|m3u8|mpd)(\?.*)?$/i.test(url);
 }
@@ -52,6 +64,7 @@ export default function Watch() {
   }
 
   const youtubeId = extractYouTubeId(movie.videoUrl);
+  const googleDriveId = extractGoogleDriveId(movie.videoUrl);
   const isDirectVideo = isVideoUrl(movie.videoUrl);
 
   return (
@@ -72,6 +85,14 @@ export default function Watch() {
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               allowFullScreen
             />
+          ) : googleDriveId ? (
+            <iframe
+              className="w-full h-full"
+              src={`https://drive.google.com/file/d/${googleDriveId}/preview`}
+              title={movie.title}
+              allow="autoplay"
+              allowFullScreen
+            />
           ) : isDirectVideo ? (
             <video
               className="w-full h-full object-contain"
@@ -85,7 +106,7 @@ export default function Watch() {
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center">
               <AlertTriangle className="w-16 h-16 text-yellow-500 mb-4" />
-              <p className="text-zinc-400">Invalid video URL format. Please use a YouTube link or direct MP4/WebM/HLS URL.</p>
+              <p className="text-zinc-400">Invalid video URL format. Please use a YouTube link, Google Drive link, or direct MP4/WebM/HLS URL.</p>
             </div>
           )}
         </div>
