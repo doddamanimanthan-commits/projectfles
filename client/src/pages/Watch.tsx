@@ -4,6 +4,23 @@ import { useRoute, Link } from "wouter";
 import { Loader2, ArrowLeft, Calendar, Tag, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
+function extractYouTubeId(url: string): string | null {
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
+    /youtube\.com\/embed\/([^&\n?#]+)/,
+    /youtube\.com\/v\/([^&\n?#]+)/,
+  ];
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match) return match[1];
+  }
+  return null;
+}
+
+function isVideoUrl(url: string): boolean {
+  return /\.(mp4|webm|ogv|m3u8|mpd)(\?.*)?$/i.test(url);
+}
+
 export default function Watch() {
   const [, params] = useRoute("/watch/:id");
   const id = params ? parseInt(params.id) : 0;
@@ -34,6 +51,9 @@ export default function Watch() {
     );
   }
 
+  const youtubeId = extractYouTubeId(movie.videoUrl);
+  const isDirectVideo = isVideoUrl(movie.videoUrl);
+
   return (
     <Layout>
       <div className="max-w-6xl mx-auto space-y-8">
@@ -44,15 +64,30 @@ export default function Watch() {
 
         {/* Video Player */}
         <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
-          <video
-            className="w-full h-full object-contain"
-            controls
-            autoPlay
-            poster={movie.posterUrl}
-            src={movie.videoUrl}
-          >
-            Your browser does not support the video tag.
-          </video>
+          {youtubeId ? (
+            <iframe
+              className="w-full h-full"
+              src={`https://www.youtube.com/embed/${youtubeId}?autoplay=1`}
+              title={movie.title}
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          ) : isDirectVideo ? (
+            <video
+              className="w-full h-full object-contain"
+              controls
+              autoPlay
+              poster={movie.posterUrl}
+              src={movie.videoUrl}
+            >
+              Your browser does not support the video tag.
+            </video>
+          ) : (
+            <div className="w-full h-full flex flex-col items-center justify-center">
+              <AlertTriangle className="w-16 h-16 text-yellow-500 mb-4" />
+              <p className="text-zinc-400">Invalid video URL format. Please use a YouTube link or direct MP4/WebM/HLS URL.</p>
+            </div>
+          )}
         </div>
 
         {/* Movie Info */}
