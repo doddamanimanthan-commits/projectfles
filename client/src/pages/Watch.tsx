@@ -3,6 +3,7 @@ import { Layout } from "@/components/Layout";
 import { useRoute, Link } from "wouter";
 import { Loader2, ArrowLeft, Calendar, Tag, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 function extractYouTubeId(url: string): string | null {
   const patterns = [
@@ -37,6 +38,7 @@ export default function Watch() {
   const [, params] = useRoute("/watch/:id");
   const id = params ? parseInt(params.id) : 0;
   const { data: movie, isLoading, error } = useMovie(id);
+  const [selectedEpisode, setSelectedEpisode] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -63,20 +65,23 @@ export default function Watch() {
     );
   }
 
-  const youtubeId = extractYouTubeId(movie.videoUrl);
-  const googleDriveId = extractGoogleDriveId(movie.videoUrl);
-  const isDirectVideo = isVideoUrl(movie.videoUrl);
+  const episodes = movie.isSeries && movie.episodes ? JSON.parse(movie.episodes) : [];
+  const currentVideoUrl = selectedEpisode || movie.videoUrl;
+
+  const youtubeId = extractYouTubeId(currentVideoUrl);
+  const googleDriveId = extractGoogleDriveId(currentVideoUrl);
+  const isDirectVideo = isVideoUrl(currentVideoUrl);
 
   return (
     <Layout>
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-full mx-auto space-y-6 px-2 md:px-6">
         <Link href="/" className="inline-flex items-center text-muted-foreground hover:text-white transition-colors mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" />
           Back to Browse
         </Link>
 
-        {/* Video Player */}
-        <div className="relative w-full aspect-video bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
+        {/* Video Player - Large */}
+        <div className="relative w-full h-[85vh] bg-black rounded-xl overflow-hidden shadow-2xl ring-1 ring-white/10">
           {youtubeId ? (
             <iframe
               className="w-full h-full"
@@ -99,7 +104,7 @@ export default function Watch() {
               controls
               autoPlay
               poster={movie.posterUrl}
-              src={movie.videoUrl}
+              src={currentVideoUrl}
             >
               Your browser does not support the video tag.
             </video>
@@ -112,7 +117,7 @@ export default function Watch() {
         </div>
 
         {/* Movie Info */}
-        <div className="grid md:grid-cols-[1fr_300px] gap-8">
+        <div className="space-y-6">
           <div>
             <h1 className="text-4xl md:text-5xl font-display font-bold text-white mb-4">{movie.title}</h1>
             <div className="flex flex-wrap items-center gap-4 text-sm text-zinc-300 mb-6">
@@ -131,18 +136,28 @@ export default function Watch() {
             </div>
           </div>
 
-          <div className="space-y-6">
-             <div className="aspect-[2/3] rounded-lg overflow-hidden border border-zinc-800 shadow-xl hidden md:block">
-               <img 
-                src={movie.posterUrl} 
-                alt={movie.title} 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = "https://images.unsplash.com/photo-1598899134739-24c46f58b8c0?w=800&auto=format&fit=crop&q=60";
-                }}
-               />
-             </div>
-          </div>
+          {/* Episodes List for Series */}
+          {movie.isSeries && episodes.length > 0 && (
+            <div className="bg-zinc-900/50 p-6 rounded-xl border border-zinc-800">
+              <h3 className="font-bold text-lg mb-4 text-white">Episodes</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                {episodes.map((episode: any, index: number) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedEpisode(episode.url)}
+                    className={`p-3 rounded-lg border text-left transition-all ${
+                      selectedEpisode === episode.url
+                        ? 'bg-primary border-primary text-white'
+                        : 'bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
+                    }`}
+                  >
+                    <div className="font-medium">Episode {index + 1}</div>
+                    {episode.title && <div className="text-sm truncate">{episode.title}</div>}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Layout>

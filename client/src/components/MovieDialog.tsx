@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useState, useEffect } from "react";
 import { Plus, Loader2 } from "lucide-react";
 import { z } from "zod";
@@ -36,6 +37,8 @@ interface MovieDialogProps {
 // Ensure numbers are coerced from strings for form inputs
 const formSchema = insertMovieSchema.extend({
   releaseYear: z.coerce.number().min(1888).max(new Date().getFullYear() + 5),
+  isSeries: z.boolean().default(false),
+  episodes: z.string().default(""),
 });
 
 export function MovieDialog({ movie, trigger, open, onOpenChange }: MovieDialogProps) {
@@ -50,7 +53,7 @@ export function MovieDialog({ movie, trigger, open, onOpenChange }: MovieDialogP
   const isEditing = !!movie;
   const isPending = createMovie.isPending || updateMovie.isPending;
 
-  const form = useForm<InsertMovie>({
+  const form = useForm<InsertMovie & { isSeries: boolean }>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: "",
@@ -59,6 +62,8 @@ export function MovieDialog({ movie, trigger, open, onOpenChange }: MovieDialogP
       videoUrl: "",
       genre: "",
       releaseYear: new Date().getFullYear(),
+      isSeries: false,
+      episodes: "",
     },
   });
 
@@ -73,6 +78,8 @@ export function MovieDialog({ movie, trigger, open, onOpenChange }: MovieDialogP
           videoUrl: movie.videoUrl,
           genre: movie.genre,
           releaseYear: movie.releaseYear,
+          isSeries: movie.isSeries,
+          episodes: movie.episodes,
         });
       } else {
         form.reset({
@@ -82,17 +89,23 @@ export function MovieDialog({ movie, trigger, open, onOpenChange }: MovieDialogP
           videoUrl: "",
           genre: "",
           releaseYear: new Date().getFullYear(),
+          isSeries: false,
+          episodes: "",
         });
       }
     }
   }, [show, movie, form]);
 
-  async function onSubmit(data: InsertMovie) {
+  async function onSubmit(data: any) {
     try {
+      const submitData = {
+        ...data,
+        episodes: data.isSeries && data.episodes ? data.episodes : "",
+      };
       if (isEditing) {
-        await updateMovie.mutateAsync({ id: movie.id, ...data });
+        await updateMovie.mutateAsync({ id: movie.id, ...submitData });
       } else {
-        await createMovie.mutateAsync(data);
+        await createMovie.mutateAsync(submitData);
       }
       setShow(false);
     } catch (error) {
@@ -187,7 +200,7 @@ export function MovieDialog({ movie, trigger, open, onOpenChange }: MovieDialogP
                 name="videoUrl"
                 render={({ field }) => (
                   <FormItem className="col-span-2">
-                    <FormLabel>Video Stream URL (MP4/HLS)</FormLabel>
+                    <FormLabel>Video Stream URL (YouTube/Drive/MP4/HLS)</FormLabel>
                     <FormControl>
                       <Input placeholder="https://..." {...field} />
                     </FormControl>
@@ -195,6 +208,43 @@ export function MovieDialog({ movie, trigger, open, onOpenChange }: MovieDialogP
                   </FormItem>
                 )}
               />
+
+              <FormField
+                control={form.control}
+                name="isSeries"
+                render={({ field }) => (
+                  <FormItem className="flex items-center justify-between col-span-2 border border-zinc-700 p-3 rounded-lg bg-zinc-900/50">
+                    <div className="flex flex-col space-y-1">
+                      <FormLabel className="cursor-pointer">This is a TV Series</FormLabel>
+                      <p className="text-sm text-muted-foreground">Enable to add multiple episode links</p>
+                    </div>
+                    <FormControl>
+                      <Switch checked={field.value} onCheckedChange={field.onChange} />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {form.watch("isSeries") && (
+                <FormField
+                  control={form.control}
+                  name="episodes"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Episodes (JSON format)</FormLabel>
+                      <FormControl>
+                        <Textarea 
+                          placeholder={`[{"title": "Episode 1", "url": "https://..."},{"title": "Episode 2", "url": "https://..."}]`}
+                          className="min-h-[120px] font-mono text-sm"
+                          {...field} 
+                        />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground mt-1">Paste episode URLs as JSON array with "title" and "url" fields</p>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <FormField
                 control={form.control}

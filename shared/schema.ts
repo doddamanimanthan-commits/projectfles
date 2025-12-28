@@ -16,10 +16,12 @@ export const movies = pgTable("movies", {
   videoUrl: text("video_url").notNull(),
   genre: text("genre").notNull(),
   releaseYear: integer("release_year").notNull(),
+  isSeries: boolean("is_series").default(false).notNull(),
+  episodes: text("episodes").default("").notNull(), // JSON array stored as string
 });
 
 export const insertUserSchema = createInsertSchema(users);
-export const insertMovieSchema = createInsertSchema(movies);
+export const insertMovieSchema = createInsertSchema(movies).omit({ id: true });
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
