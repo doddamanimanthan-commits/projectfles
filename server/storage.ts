@@ -34,6 +34,9 @@ export class FileStorage implements IStorage {
 
   private loadData() {
     try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
       if (fs.existsSync(USERS_FILE)) {
         const data = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
         data.forEach((user: User) => {
@@ -55,6 +58,9 @@ export class FileStorage implements IStorage {
 
   private saveData() {
     try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
       fs.writeFileSync(USERS_FILE, JSON.stringify(Array.from(this.users.values()), null, 2));
       fs.writeFileSync(MOVIES_FILE, JSON.stringify(Array.from(this.movies.values()), null, 2));
     } catch (err) {
