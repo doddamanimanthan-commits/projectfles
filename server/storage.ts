@@ -19,21 +19,31 @@ export interface IStorage {
 
 export class SupabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    const { data } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', id)
-      .single();
-    return data || undefined;
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+      return data || undefined;
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const { data } = await supabase
-      .from('users')
-      .select('*')
-      .eq('username', username)
-      .single();
-    return data || undefined;
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', username)
+        .single();
+      return data || undefined;
+    } catch (err) {
+      console.error("Error fetching user by username:", err);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
@@ -42,25 +52,38 @@ export class SupabaseStorage implements IStorage {
       .insert([insertUser])
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
     return data;
   }
 
   async getMovies(): Promise<Movie[]> {
-    const { data, error } = await supabase
-      .from('movies')
-      .select('*');
-    if (error) throw error;
-    return data || [];
+    try {
+      const { data, error } = await supabase
+        .from('movies')
+        .select('*');
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error("Error fetching movies:", err);
+      return [];
+    }
   }
 
   async getMovie(id: number): Promise<Movie | undefined> {
-    const { data } = await supabase
-      .from('movies')
-      .select('*')
-      .eq('id', id)
-      .single();
-    return data || undefined;
+    try {
+      const { data } = await supabase
+        .from('movies')
+        .select('*')
+        .eq('id', id)
+        .single();
+      return data || undefined;
+    } catch (err) {
+      console.error("Error fetching movie:", err);
+      return undefined;
+    }
   }
 
   async createMovie(insertMovie: InsertMovie): Promise<Movie> {
@@ -69,27 +92,40 @@ export class SupabaseStorage implements IStorage {
       .insert([insertMovie])
       .select()
       .single();
-    if (error) throw error;
+    if (error) {
+      console.error("Error creating movie:", error);
+      throw error;
+    }
     return data;
   }
 
   async updateMovie(id: number, movieUpdate: Partial<InsertMovie>): Promise<Movie | undefined> {
-    const { data, error } = await supabase
-      .from('movies')
-      .update(movieUpdate)
-      .eq('id', id)
-      .select()
-      .single();
-    if (error) throw error;
-    return data || undefined;
+    try {
+      const { data, error } = await supabase
+        .from('movies')
+        .update(movieUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+      if (error) throw error;
+      return data || undefined;
+    } catch (err) {
+      console.error("Error updating movie:", err);
+      return undefined;
+    }
   }
 
   async deleteMovie(id: number): Promise<void> {
-    const { error } = await supabase
-      .from('movies')
-      .delete()
-      .eq('id', id);
-    if (error) throw error;
+    try {
+      const { error } = await supabase
+        .from('movies')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Error deleting movie:", err);
+      throw err;
+    }
   }
 }
 
