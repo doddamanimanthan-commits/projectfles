@@ -5,7 +5,8 @@ import { Loader2, ArrowLeft, Calendar, Tag, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 
-function extractYouTubeId(url: string): string | null {
+function extractYouTubeId(url: string | undefined | null): string | null {
+  if (!url) return null;
   const patterns = [
     /(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\n?#]+)/,
     /youtube\.com\/embed\/([^&\n?#]+)/,
@@ -18,7 +19,8 @@ function extractYouTubeId(url: string): string | null {
   return null;
 }
 
-function extractGoogleDriveId(url: string): string | null {
+function extractGoogleDriveId(url: string | undefined | null): string | null {
+  if (!url) return null;
   const patterns = [
     /drive\.google\.com\/file\/d\/([a-zA-Z0-9-_]+)/,
     /drive\.google\.com\/open\?id=([a-zA-Z0-9-_]+)/,
@@ -30,7 +32,8 @@ function extractGoogleDriveId(url: string): string | null {
   return null;
 }
 
-function isVideoUrl(url: string): boolean {
+function isVideoUrl(url: string | undefined | null): boolean {
+  if (!url) return false;
   return /\.(mp4|webm|ogv|m3u8|mpd)(\?.*)?$/i.test(url);
 }
 
