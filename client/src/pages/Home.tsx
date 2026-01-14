@@ -4,6 +4,7 @@ import { MovieCard } from "@/components/MovieCard";
 import { Input } from "@/components/ui/input";
 import { Search, Film, Loader2 } from "lucide-react";
 import { useState } from "react";
+import { RequestModal } from "@/components/RequestModal";
 
 export default function Home() {
   const { data: movies, isLoading, error } = useMovies();
@@ -25,14 +26,17 @@ export default function Home() {
             <p className="text-muted-foreground">Discover and stream the latest blockbusters.</p>
           </div>
           
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input 
-              placeholder="Search titles, genres..." 
-              className="pl-9 bg-zinc-900 border-zinc-800 focus:border-primary focus:ring-primary/20"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
+          <div className="flex flex-col sm:flex-row gap-4 w-full md:w-auto">
+            <RequestModal />
+            <div className="relative w-full md:w-72">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search titles, genres..." 
+                className="pl-9 bg-zinc-900 border-zinc-800 focus:border-primary focus:ring-primary/20"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
           </div>
         </div>
 

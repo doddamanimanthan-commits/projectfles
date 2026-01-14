@@ -4,6 +4,7 @@ import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
+import nodemailer from "nodemailer";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -11,6 +12,43 @@ export async function registerRoutes(
 ): Promise<Server> {
   // Set up authentication first
   setupAuth(app);
+
+  // Request Movie Route
+  app.post("/api/requests", async (req, res) => {
+    try {
+      const { type, name, details } = req.body;
+      
+      if (!name) {
+        return res.status(400).json({ message: "Movie/Series name is required" });
+      }
+
+      const transporter = nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: "nobinobitadora2@gmail.com",
+        subject: `New ${type} Request: ${name}`,
+        text: `
+Request Type: ${type}
+Requested Name: ${name}
+Additional Details: ${details || "None provided"}
+Date & Time: ${new Date().toLocaleString()}
+        `,
+      };
+
+      await transporter.sendMail(mailOptions);
+      res.status(200).json({ message: "Request sent successfully!" });
+    } catch (error) {
+      console.error("Error sending request email:", error);
+      res.status(500).json({ message: "Failed to send request. Please try again later." });
+    }
+  });
 
   // Movie Routes
   app.get(api.movies.list.path, async (req, res) => {
