@@ -131,7 +131,10 @@ export class SupabaseStorage implements IStorage {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error creating movie:", error);
+        throw error;
+      }
       
       return {
         id: data.id,
