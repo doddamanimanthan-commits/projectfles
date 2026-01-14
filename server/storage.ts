@@ -114,19 +114,22 @@ export class SupabaseStorage implements IStorage {
 
   async createMovie(insertMovie: InsertMovie): Promise<Movie> {
     try {
+      // Create a clean object without any 'id' property to ensure auto-increment works
+      const { title, description, posterUrl, videoUrl, genre, releaseYear, isSeries, episodes } = insertMovie;
+      
       const supabaseMovie = {
-        title: insertMovie.title,
-        description: insertMovie.description,
-        poster_url: insertMovie.posterUrl,
-        video_url: insertMovie.videoUrl,
-        genre: insertMovie.genre,
-        release_year: insertMovie.releaseYear,
-        is_series: insertMovie.isSeries,
-        episodes: insertMovie.episodes
+        title,
+        description,
+        poster_url: posterUrl,
+        video_url: videoUrl,
+        genre,
+        release_year: releaseYear,
+        is_series: isSeries,
+        episodes: episodes || ""
       };
 
-      // Explicitly tell Supabase to exclude 'id' from the insert object
-      // so Postgres uses the sequence for auto-increment
+      console.log("Attempting to insert movie into Supabase:", supabaseMovie);
+
       const { data, error } = await supabase
         .from('movies')
         .insert([supabaseMovie])
@@ -134,8 +137,12 @@ export class SupabaseStorage implements IStorage {
         .single();
       
       if (error) {
-        console.error("Supabase error creating movie:", error);
-        throw error;
+        console.error("Supabase detailed error:", JSON.stringify(error, null, 2));
+        throw new Error(error.message || "Failed to create movie in database");
+      }
+      
+      if (!data) {
+        throw new Error("No data returned from movie creation");
       }
       
       return {
@@ -149,8 +156,8 @@ export class SupabaseStorage implements IStorage {
         isSeries: data.is_series,
         episodes: data.episodes
       };
-    } catch (error) {
-      console.error("Error creating movie:", error);
+    } catch (error: any) {
+      console.error("Caught error in createMovie:", error.message || error);
       throw error;
     }
   }
