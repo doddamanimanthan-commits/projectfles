@@ -68,7 +68,7 @@ Date & Time: ${new Date().toLocaleString()}
   });
 
   // Protected Admin Routes
-  app.post(api.movies.create.path, async (req, res) => {
+  app.post(api.movies.create.path, async (req, res, next) => {
     if (!req.isAuthenticated()) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -78,10 +78,7 @@ Date & Time: ${new Date().toLocaleString()}
       const movie = await storage.createMovie(input);
       res.status(201).json(movie);
     } catch (err) {
-      if (err instanceof z.ZodError) {
-        return res.status(400).json({ message: err.errors[0].message });
-      }
-      throw err;
+      next(err);
     }
   });
 
