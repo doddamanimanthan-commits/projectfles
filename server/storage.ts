@@ -125,7 +125,8 @@ export class SupabaseStorage implements IStorage {
         episodes: insertMovie.episodes
       };
 
-      // Ensure we don't pass an ID to let Supabase/Postgres handle auto-increment
+      // Explicitly tell Supabase to exclude 'id' from the insert object
+      // so Postgres uses the sequence for auto-increment
       const { data, error } = await supabase
         .from('movies')
         .insert([supabaseMovie])
