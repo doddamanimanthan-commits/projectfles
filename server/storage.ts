@@ -47,16 +47,18 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const { data, error } = await supabase
-      .from('users')
-      .insert([insertUser])
-      .select()
-      .single();
-    if (error) {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([insertUser])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (error) {
       console.error("Error creating user:", error);
       throw error;
     }
-    return data;
   }
 
   async getMovies(): Promise<Movie[]> {
@@ -65,7 +67,19 @@ export class SupabaseStorage implements IStorage {
         .from('movies')
         .select('*');
       if (error) throw error;
-      return data || [];
+      
+      // Map Supabase snake_case back to camelCase
+      return (data || []).map((m: any) => ({
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        posterUrl: m.poster_url,
+        videoUrl: m.video_url,
+        genre: m.genre,
+        releaseYear: m.release_year,
+        isSeries: m.is_series,
+        episodes: m.episodes
+      }));
     } catch (err) {
       console.error("Error fetching movies:", err);
       return [];
@@ -79,7 +93,19 @@ export class SupabaseStorage implements IStorage {
         .select('*')
         .eq('id', id)
         .single();
-      return data || undefined;
+      if (!data) return undefined;
+      
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        posterUrl: data.poster_url,
+        videoUrl: data.video_url,
+        genre: data.genre,
+        releaseYear: data.release_year,
+        isSeries: data.is_series,
+        episodes: data.episodes
+      };
     } catch (err) {
       console.error("Error fetching movie:", err);
       return undefined;
@@ -87,28 +113,76 @@ export class SupabaseStorage implements IStorage {
   }
 
   async createMovie(insertMovie: InsertMovie): Promise<Movie> {
-    const { data, error } = await supabase
-      .from('movies')
-      .insert([insertMovie])
-      .select()
-      .single();
-    if (error) {
+    try {
+      const supabaseMovie = {
+        title: insertMovie.title,
+        description: insertMovie.description,
+        poster_url: insertMovie.posterUrl,
+        video_url: insertMovie.videoUrl,
+        genre: insertMovie.genre,
+        release_year: insertMovie.releaseYear,
+        is_series: insertMovie.isSeries,
+        episodes: insertMovie.episodes
+      };
+
+      const { data, error } = await supabase
+        .from('movies')
+        .insert([supabaseMovie])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        posterUrl: data.poster_url,
+        videoUrl: data.video_url,
+        genre: data.genre,
+        releaseYear: data.release_year,
+        isSeries: data.is_series,
+        episodes: data.episodes
+      };
+    } catch (error) {
       console.error("Error creating movie:", error);
       throw error;
     }
-    return data;
   }
 
   async updateMovie(id: number, movieUpdate: Partial<InsertMovie>): Promise<Movie | undefined> {
     try {
+      const supabaseUpdate: any = {};
+      if (movieUpdate.title !== undefined) supabaseUpdate.title = movieUpdate.title;
+      if (movieUpdate.description !== undefined) supabaseUpdate.description = movieUpdate.description;
+      if (movieUpdate.posterUrl !== undefined) supabaseUpdate.poster_url = movieUpdate.posterUrl;
+      if (movieUpdate.videoUrl !== undefined) supabaseUpdate.video_url = movieUpdate.videoUrl;
+      if (movieUpdate.genre !== undefined) supabaseUpdate.genre = movieUpdate.genre;
+      if (movieUpdate.releaseYear !== undefined) supabaseUpdate.release_year = movieUpdate.releaseYear;
+      if (movieUpdate.isSeries !== undefined) supabaseUpdate.is_series = movieUpdate.isSeries;
+      if (movieUpdate.episodes !== undefined) supabaseUpdate.episodes = movieUpdate.episodes;
+
       const { data, error } = await supabase
         .from('movies')
-        .update(movieUpdate)
+        .update(supabaseUpdate)
         .eq('id', id)
         .select()
         .single();
+      
       if (error) throw error;
-      return data || undefined;
+      if (!data) return undefined;
+
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        posterUrl: data.poster_url,
+        videoUrl: data.video_url,
+        genre: data.genre,
+        releaseYear: data.release_year,
+        isSeries: data.is_series,
+        episodes: data.episodes
+      };
     } catch (err) {
       console.error("Error updating movie:", err);
       return undefined;
