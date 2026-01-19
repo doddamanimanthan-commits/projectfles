@@ -99,29 +99,6 @@ export function setupAuth(app: Express) {
     res.json(null);
   });
 
-  app.get("/api/login/google", (req, res) => {
-    // This is a placeholder for the Google login redirect
-    // For this simple implementation, we'll just redirect back with a mock user
-    res.redirect("/api/auth/google/callback");
-  });
-
-  app.get("/api/auth/google/callback", async (req, res) => {
-    // Create or get a mock Google user
-    let user = await storage.getUserByUsername("Google User");
-    if (!user) {
-      user = await storage.createUser({
-        username: "Google User",
-        password: "google-auth-placeholder",
-        avatarUrl: "https://lh3.googleusercontent.com/a/default-user=s96-c",
-      });
-    }
-    
-    req.logIn(user, (err) => {
-      if (err) return res.redirect("/login");
-      res.redirect("/");
-    });
-  });
-
   // Seed admin user if not exists
   (async () => {
     const admin = await storage.getUserByUsername("admin");
