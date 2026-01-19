@@ -4,8 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Film, LogOut, Settings } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = useAuth() as any;
   const [location] = useLocation();
@@ -26,7 +24,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <>
                 <div className="flex items-center gap-3 px-3 py-1 bg-zinc-900/50 rounded-full border border-border">
                   <Avatar className="w-7 h-7">
-                    <AvatarImage src={user.avatarUrl} />
+                    <AvatarImage src={user.avatarUrl || undefined} />
                     <AvatarFallback className="bg-primary/20 text-primary text-xs">
                       {user.username?.[0]?.toUpperCase()}
                     </AvatarFallback>

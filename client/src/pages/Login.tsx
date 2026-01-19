@@ -108,7 +108,7 @@ export default function Login() {
         </CardContent>
         <CardFooter className="justify-center border-t border-border/40 pt-6">
           <Link href="/">
-            <Button variant="link" className="text-muted-foreground hover:text-white">
+            <Button variant="ghost" className="text-muted-foreground hover:text-white">
               Back to Home
             </Button>
           </Link>
