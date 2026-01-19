@@ -2,9 +2,12 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Film, LogOut, Settings } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuth() as any;
   const [location] = useLocation();
 
   const isAdmin = location.startsWith("/admin");
@@ -21,6 +24,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <nav className="flex items-center gap-4">
             {user ? (
               <>
+                <div className="flex items-center gap-3 px-3 py-1 bg-zinc-900/50 rounded-full border border-border">
+                  <Avatar className="w-7 h-7">
+                    <AvatarImage src={user.avatarUrl} />
+                    <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                      {user.username?.[0]?.toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="text-sm font-medium hidden sm:inline-block">{user.username}</span>
+                </div>
                 <Link href="/admin">
                   <Button variant={isAdmin ? "default" : "ghost"} size="sm" className="gap-2">
                     <Settings className="w-4 h-4" />
@@ -33,9 +45,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </Button>
               </>
             ) : (
-              <Link href="/login">
-                <Button variant="ghost" size="sm" className="font-medium">Admin Login</Button>
-              </Link>
+              <div className="flex items-center gap-2">
+                <Avatar className="w-8 h-8 border border-border">
+                  <AvatarFallback className="bg-zinc-800 text-muted-foreground text-xs">?</AvatarFallback>
+                </Avatar>
+                <Link href="/login">
+                  <Button variant="ghost" size="sm" className="font-medium">Admin Login</Button>
+                </Link>
+              </div>
             )}
           </nav>
         </div>

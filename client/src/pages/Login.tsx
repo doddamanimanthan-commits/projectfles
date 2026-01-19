@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Link, useLocation } from "wouter";
 import { Loader2, Film } from "lucide-react";
 import { useEffect } from "react";
+import { SiGoogle } from "react-icons/si";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -16,7 +17,7 @@ const loginSchema = z.object({
 });
 
 export default function Login() {
-  const { login, isLoggingIn, user } = useAuth();
+  const { login, isLoggingIn, user } = useAuth() as any;
   const [, setLocation] = useLocation();
 
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function Login() {
           <CardTitle className="text-3xl font-display font-bold tracking-wide">Admin Access</CardTitle>
           <CardDescription>Enter your credentials to manage the catalog</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="space-y-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <FormField
@@ -86,6 +87,24 @@ export default function Login() {
               </Button>
             </form>
           </Form>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+            </div>
+          </div>
+
+          <Button 
+            variant="outline" 
+            className="w-full py-6 border-zinc-700 hover:bg-zinc-800 transition-colors"
+            onClick={() => window.location.href = "/api/login/google"}
+          >
+            <SiGoogle className="mr-2 h-4 w-4" />
+            Google Login
+          </Button>
         </CardContent>
         <CardFooter className="justify-center border-t border-border/40 pt-6">
           <Link href="/">
