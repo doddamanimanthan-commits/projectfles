@@ -1,17 +1,18 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { setupAuth } from "./auth";
 import { storage } from "./storage";
 import { api } from "@shared/routes";
 import { z } from "zod";
 import nodemailer from "nodemailer";
+import { setupAuth, registerAuthRoutes, isAuthenticated } from "./replit_integrations/auth";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   // Set up authentication first
-  setupAuth(app);
+  await setupAuth(app);
+  registerAuthRoutes(app);
 
   // Request Movie Route
   app.post("/api/requests", async (req, res) => {

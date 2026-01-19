@@ -9,6 +9,8 @@ export const users = pgTable("users", {
   avatarUrl: text("avatar_url"),
 });
 
+export * from "./models/auth";
+
 export const movies = pgTable("movies", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),

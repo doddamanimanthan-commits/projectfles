@@ -1,40 +1,18 @@
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Link, useLocation } from "wouter";
-import { Loader2, Film } from "lucide-react";
+import { Film } from "lucide-react";
 import { useEffect } from "react";
 import { SiGoogle } from "react-icons/si";
 
-const loginSchema = z.object({
-  username: z.string().min(1, "Username is required"),
-  password: z.string().min(1, "Password is required"),
-});
-
 export default function Login() {
-  const { login, isLoggingIn, user } = useAuth() as any;
+  const { user, isAuthenticated } = useAuth();
   const [, setLocation] = useLocation();
 
   useEffect(() => {
-    if (user) setLocation("/admin");
-  }, [user, setLocation]);
-
-  const form = useForm<z.infer<typeof loginSchema>>({
-    resolver: zodResolver(loginSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-    },
-  });
-
-  function onSubmit(data: z.infer<typeof loginSchema>) {
-    login(data);
-  }
+    if (isAuthenticated) setLocation("/admin");
+  }, [isAuthenticated, setLocation]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-zinc-900 via-background to-background p-4 relative overflow-hidden">
@@ -50,61 +28,20 @@ export default function Login() {
             </div>
           </div>
           <CardTitle className="text-3xl font-display font-bold tracking-wide">Admin Access</CardTitle>
-          <CardDescription>Enter your credentials to manage the catalog</CardDescription>
+          <CardDescription>Sign in to manage the catalog</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Username</FormLabel>
-                    <FormControl>
-                      <Input placeholder="admin" {...field} className="bg-zinc-900/50 border-zinc-700" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} className="bg-zinc-900/50 border-zinc-700" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <Button type="submit" className="w-full mt-4 bg-primary hover:bg-primary/90 text-white font-semibold py-6" disabled={isLoggingIn}>
-                {isLoggingIn ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-                Sign In
-              </Button>
-            </form>
-          </Form>
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-border" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-            </div>
-          </div>
-
           <Button 
-            variant="outline" 
-            className="w-full py-6 border-zinc-700 hover:bg-zinc-800 transition-colors"
-            onClick={() => window.location.href = "/api/login/google"}
+            className="w-full py-6 bg-primary hover:bg-primary/90 text-white font-semibold flex items-center justify-center"
+            onClick={() => window.location.href = "/api/login"}
           >
-            <SiGoogle className="mr-2 h-4 w-4" />
-            Google Login
+            <SiGoogle className="mr-2 h-5 w-5" />
+            Sign in with Google
           </Button>
+
+          <div className="text-center text-xs text-muted-foreground mt-4">
+            Authorized access only. By signing in, you agree to our terms.
+          </div>
         </CardContent>
         <CardFooter className="justify-center border-t border-border/40 pt-6">
           <Link href="/">
@@ -112,6 +49,11 @@ export default function Login() {
               Back to Home
             </Button>
           </Link>
+        </CardFooter>
+      </Card>
+    </div>
+  );
+}
         </CardFooter>
       </Card>
     </div>
