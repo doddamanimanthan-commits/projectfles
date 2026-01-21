@@ -4,6 +4,7 @@ import { useRoute, Link } from "wouter";
 import { Loader2, ArrowLeft, Calendar, Tag, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { VideoPlayer } from "@/components/VideoPlayer";
 
 function extractYouTubeId(url: string | undefined | null): string | null {
   if (!url) return null;
@@ -102,15 +103,10 @@ export default function Watch() {
               allowFullScreen
             />
           ) : isDirectVideo ? (
-            <video
-              className="w-full h-full object-contain"
-              controls
-              autoPlay
-              poster={movie.posterUrl}
+            <VideoPlayer
               src={currentVideoUrl}
-            >
-              Your browser does not support the video tag.
-            </video>
+              poster={movie.posterUrl}
+            />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center">
               <AlertTriangle className="w-16 h-16 text-yellow-500 mb-4" />
