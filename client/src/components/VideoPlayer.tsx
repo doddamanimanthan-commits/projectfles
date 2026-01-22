@@ -1,8 +1,9 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import videojs from 'video.js';
 import 'video.js/dist/video-js.css';
 import 'videojs-contrib-quality-levels';
 import 'videojs-hls-quality-selector';
+import { Play } from 'lucide-react';
 
 interface VideoPlayerProps {
   src: string;
@@ -12,6 +13,7 @@ interface VideoPlayerProps {
 export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
   const videoRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<any>(null);
+  const [isPaused, setIsPaused] = useState(true);
 
   useEffect(() => {
     // Make sure Video.js player is only initialized once
@@ -21,7 +23,7 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
       videoRef.current.appendChild(videoElement);
 
       const player = playerRef.current = videojs(videoElement, {
-        autoplay: true,
+        autoplay: false,
         controls: true,
         responsive: true,
         fluid: true,
@@ -46,6 +48,9 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         }],
         poster
       });
+
+      player.on('play', () => setIsPaused(false));
+      player.on('pause', () => setIsPaused(true));
 
       player.ready(() => {
         console.log('player is ready');
@@ -101,7 +106,7 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
     } else if (playerRef.current) {
       const player = playerRef.current;
       player.src({ src, type: src.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4' });
-      player.autoplay(true);
+      player.autoplay(false);
     }
   }, [src]);
 
@@ -115,9 +120,32 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
     };
   }, []);
 
+  const togglePlay = () => {
+    if (playerRef.current) {
+      if (playerRef.current.paused()) {
+        playerRef.current.play();
+      } else {
+        playerRef.current.pause();
+      }
+    }
+  };
+
   return (
     <div data-vjs-player className="w-full h-full group relative">
       <div ref={videoRef} className="w-full h-full" />
+      
+      {/* Big Play Button Overlay */}
+      {isPaused && (
+        <div 
+          className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer z-10 transition-opacity"
+          onClick={togglePlay}
+        >
+          <div className="w-20 h-20 flex items-center justify-center rounded-full bg-primary/80 hover:bg-primary text-white transition-all transform hover:scale-110">
+            <Play className="w-10 h-10 fill-current ml-1" />
+          </div>
+        </div>
+      )}
+
       <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 px-2 py-1 rounded text-xs text-white pointer-events-none z-10">
         Press 'F' for Fullscreen • Space to Play/Pause
       </div>
