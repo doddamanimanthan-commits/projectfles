@@ -19,7 +19,7 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
     // Make sure Video.js player is only initialized once
     if (!playerRef.current && videoRef.current) {
       const videoElement = document.createElement("video-js");
-      videoElement.className = 'video-js vjs-big-play-centered vjs-theme-city';
+      videoElement.className = 'video-js vjs-theme-city';
       videoRef.current.appendChild(videoElement);
 
       const player = playerRef.current = videojs(videoElement, {

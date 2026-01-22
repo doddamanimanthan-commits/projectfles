@@ -73,6 +73,11 @@ video {
   @apply shadow-2xl rounded-lg overflow-hidden bg-black;
 }
 
+/* Hide default Video.js big play button since we use a custom one */
+.vjs-big-play-button {
+  display: none !important;
+}
+
 /* Video.js Netflix Theme Customization */
 .video-js.vjs-theme-city {
   --vjs-theme-city--primary: #e50914;
