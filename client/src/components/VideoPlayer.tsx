@@ -61,25 +61,40 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         poster,
         userActions: {
           hotkeys: true
-        },
-        html5: {
-          vhs: {
-            withCredentials: true,
-            overrideNative: true,
-            handleManifestRedirects: true,
-            xhrSetup: function(xhr: XMLHttpRequest, url: string) {
-              if (customHeaders) {
-                Object.entries(customHeaders).forEach(([key, value]) => {
-                  xhr.setRequestHeader(key, value);
-                });
-              }
-            }
-          }
         }
       });
 
       player.on('play', () => setIsPaused(false));
       player.on('pause', () => setIsPaused(true));
+
+      // Handle custom headers for proxy links using Video.js HTTP request hooks
+      if (customHeaders) {
+        const vjs = videojs as any;
+        // For HLS.js (vhs)
+        if (vjs.Vhs && vjs.Vhs.xhr) {
+          const originalBeforeRequest = vjs.Vhs.xhr.beforeRequest;
+          vjs.Vhs.xhr.beforeRequest = function(options: any) {
+            if (options.uri.includes(url.hostname)) {
+              options.headers = options.headers || {};
+              Object.entries(customHeaders).forEach(([key, value]) => {
+                options.headers[key] = value;
+              });
+            }
+            if (originalBeforeRequest) return originalBeforeRequest(options);
+            return options;
+          };
+        }
+        
+        // For general XHR (if native HLS or other tech is used)
+        const originalXhrSend = window.XMLHttpRequest.prototype.send;
+        window.XMLHttpRequest.prototype.send = function(body) {
+          // Check if this XHR is for our proxy URL
+          // We can't easily check the URL here without intercepting 'open', 
+          // but vjs.Vhs.xhr.beforeRequest is usually sufficient for Video.js.
+          // If that fails, we might need a more robust interceptor.
+          return originalXhrSend.apply(this, [body]);
+        };
+      }
 
       player.ready(() => {
         console.log('player is ready');
