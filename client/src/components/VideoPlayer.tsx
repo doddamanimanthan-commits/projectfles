@@ -22,6 +22,18 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
       videoElement.className = 'video-js vjs-theme-city';
       videoRef.current.appendChild(videoElement);
 
+      const url = new URL(src);
+      const headersStr = url.searchParams.get('headers');
+      let customHeaders: Record<string, string> = {};
+
+      if (headersStr) {
+        try {
+          customHeaders = JSON.parse(decodeURIComponent(headersStr));
+        } catch (e) {
+          console.error('Error parsing custom headers:', e);
+        }
+      }
+
       const player = playerRef.current = videojs(videoElement, {
         autoplay: false,
         controls: true,
@@ -49,6 +61,20 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         poster,
         userActions: {
           hotkeys: true
+        },
+        html5: {
+          vhs: {
+            withCredentials: true,
+            overrideNative: true,
+            handleManifestRedirects: true,
+            xhrSetup: function(xhr: XMLHttpRequest, url: string) {
+              if (customHeaders) {
+                Object.entries(customHeaders).forEach(([key, value]) => {
+                  xhr.setRequestHeader(key, value);
+                });
+              }
+            }
+          }
         }
       });
 
