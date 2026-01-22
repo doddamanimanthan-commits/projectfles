@@ -47,8 +47,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       <footer className="border-t border-border/40 bg-zinc-950 py-8 mt-auto">
         <div className="container mx-auto px-4 text-center text-muted-foreground text-sm">
-          <p className="mb-2">&copy; {new Date().getFullYear()} StreamFlix. All rights reserved.</p>
-          <p className="text-xs opacity-50">Demo Application • Built with React, Tailwind, and Node.js</p>
+          <p className="mb-2">&copy; {new Date().getFullYear()} Cine Streamer. All rights reserved.</p>
+          <p className="text-xs opacity-50">Created And Managed by Manthan Doddamani</p>
         </div>
       </footer>
     </div>
