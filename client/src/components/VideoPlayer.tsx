@@ -143,8 +143,8 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
           className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer z-10 transition-opacity"
           onClick={togglePlay}
         >
-          <div className="w-20 h-20 flex items-center justify-center rounded-full bg-primary/80 hover:bg-primary text-white transition-all transform hover:scale-110">
-            <Play className="w-10 h-10 fill-current ml-1" />
+          <div className="w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-full bg-primary/80 hover:bg-primary text-white transition-all transform hover:scale-110">
+            <Play className="w-8 h-8 md:w-10 md:h-10 fill-current ml-1" />
           </div>
         </div>
       )}
