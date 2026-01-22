@@ -15,23 +15,31 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
   const playerRef = useRef<any>(null);
   const [isPaused, setIsPaused] = useState(true);
 
+  const [error, setError] = useState<string | null>(null);
+
   useEffect(() => {
     // Make sure Video.js player is only initialized once
     if (!playerRef.current && videoRef.current) {
+      setError(null);
       const videoElement = document.createElement("video-js");
       videoElement.className = 'video-js vjs-theme-city';
       videoRef.current.appendChild(videoElement);
 
-      const url = new URL(src);
-      const headersStr = url.searchParams.get('headers');
+      const isHLS = src.includes('m3u8');
       let customHeaders: Record<string, string> = {};
+      let cleanSrc = src;
 
-      if (headersStr) {
-        try {
-          customHeaders = JSON.parse(decodeURIComponent(headersStr));
-        } catch (e) {
-          console.error('Error parsing custom headers:', e);
+      try {
+        const url = new URL(src);
+        const headersParam = url.searchParams.get('headers');
+        if (headersParam) {
+          customHeaders = JSON.parse(decodeURIComponent(headersParam));
+          // Remove headers param from the actual source URL used by videojs
+          url.searchParams.delete('headers');
+          cleanSrc = url.toString();
         }
+      } catch (e) {
+        console.warn('URL parsing failed:', e);
       }
 
       const player = playerRef.current = videojs(videoElement, {
@@ -55,8 +63,8 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
           ],
         },
         sources: [{
-          src,
-          type: src.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4'
+          src: cleanSrc,
+          type: isHLS ? 'application/x-mpegURL' : 'video/mp4'
         }],
         poster,
         userActions: {
@@ -64,36 +72,31 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         }
       });
 
+      player.on('error', () => {
+        const err = player.error();
+        if (err?.code === 4) {
+          setError("This video source is currently restricted or unavailable. This often happens with third-party links that block direct access. Please try another episode or source.");
+        }
+      });
+
       player.on('play', () => setIsPaused(false));
       player.on('pause', () => setIsPaused(true));
 
       // Handle custom headers for proxy links using Video.js HTTP request hooks
-      if (customHeaders) {
+      if (Object.keys(customHeaders).length > 0) {
         const vjs = videojs as any;
         // For HLS.js (vhs)
         if (vjs.Vhs && vjs.Vhs.xhr) {
           const originalBeforeRequest = vjs.Vhs.xhr.beforeRequest;
           vjs.Vhs.xhr.beforeRequest = function(options: any) {
-            if (options.uri.includes(url.hostname)) {
-              options.headers = options.headers || {};
-              Object.entries(customHeaders).forEach(([key, value]) => {
-                options.headers[key] = value;
-              });
-            }
+            options.headers = options.headers || {};
+            Object.entries(customHeaders).forEach(([key, value]) => {
+              options.headers[key] = value;
+            });
             if (originalBeforeRequest) return originalBeforeRequest(options);
             return options;
           };
         }
-        
-        // For general XHR (if native HLS or other tech is used)
-        const originalXhrSend = window.XMLHttpRequest.prototype.send;
-        window.XMLHttpRequest.prototype.send = function(body) {
-          // Check if this XHR is for our proxy URL
-          // We can't easily check the URL here without intercepting 'open', 
-          // but vjs.Vhs.xhr.beforeRequest is usually sufficient for Video.js.
-          // If that fails, we might need a more robust interceptor.
-          return originalXhrSend.apply(this, [body]);
-        };
       }
 
       player.ready(() => {
@@ -178,7 +181,22 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
     <div data-vjs-player className="w-full h-full group relative">
       <div ref={videoRef} className="w-full h-full" />
       
-      {/* Big Play Button Overlay */}
+      {/* Error Message */}
+      {error && (
+        <div className="absolute inset-0 flex items-center justify-center bg-black/80 z-20 p-4 text-center">
+          <div className="max-w-md">
+            <p className="text-white text-lg font-medium mb-4">{error}</p>
+            <div className="flex justify-center gap-4">
+              <button 
+                className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {isPaused && (
         <div 
           className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer z-10 transition-opacity"
