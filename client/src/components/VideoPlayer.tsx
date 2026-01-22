@@ -46,7 +46,10 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
           src,
           type: src.includes('m3u8') ? 'application/x-mpegURL' : 'video/mp4'
         }],
-        poster
+        poster,
+        userActions: {
+          hotkeys: true
+        }
       });
 
       player.on('play', () => setIsPaused(false));
