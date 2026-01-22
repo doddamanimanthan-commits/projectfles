@@ -145,10 +145,6 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
           </div>
         </div>
       )}
-
-      <div className="absolute top-4 left-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/50 px-2 py-1 rounded text-xs text-white pointer-events-none z-10">
-        Press 'F' for Fullscreen • Space to Play/Pause
-      </div>
     </div>
   );
 };
