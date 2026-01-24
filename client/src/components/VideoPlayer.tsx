@@ -78,11 +78,21 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         }
       });
 
-      player.on('play', () => setIsPaused(false));
+      player.on('play', () => {
+        setIsPaused(false);
+        // On mobile, force controls to hide after a short delay when playing starts
+        if (window.innerWidth < 768) {
+          player.userActive(false);
+        }
+      });
       player.on('pause', () => setIsPaused(true));
       
       player.on('useractive', () => setShowControls(true));
-      player.on('userinactive', () => setShowControls(false));
+      player.on('userinactive', () => {
+        if (!player.paused()) {
+          setShowControls(false);
+        }
+      });
 
       // Handle custom headers for proxy links using Video.js HTTP request hooks
       if (Object.keys(customHeaders).length > 0) {
@@ -190,6 +200,11 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
       data-vjs-player 
       className="w-full h-full group relative overflow-hidden bg-black"
       onDoubleClick={handleDoubleClick}
+      onTouchStart={() => {
+        if (!playerRef.current?.paused()) {
+          setShowControls(true);
+        }
+      }}
     >
       <div ref={videoRef} className="w-full h-full" />
       
