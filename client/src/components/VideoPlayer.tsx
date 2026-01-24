@@ -16,6 +16,7 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
   const [isPaused, setIsPaused] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showControls, setShowControls] = useState(true);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout | number>();
 
   useEffect(() => {
     // Make sure Video.js player is only initialized once
@@ -68,7 +69,8 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         poster,
         userActions: {
           hotkeys: true
-        }
+        },
+        inactivityTimeout: 2000
       });
 
       player.on('error', () => {
@@ -80,14 +82,22 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
 
       player.on('play', () => {
         setIsPaused(false);
-        // On mobile, force controls to hide after a short delay when playing starts
         if (window.innerWidth < 768) {
           player.userActive(false);
+          setShowControls(false);
         }
       });
-      player.on('pause', () => setIsPaused(true));
       
-      player.on('useractive', () => setShowControls(true));
+      player.on('pause', () => {
+        setIsPaused(true);
+        setShowControls(true);
+      });
+      
+      player.on('useractive', () => {
+        setShowControls(true);
+        if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current as any);
+      });
+
       player.on('userinactive', () => {
         if (!player.paused()) {
           setShowControls(false);
@@ -111,7 +121,6 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
       }
 
       player.ready(() => {
-        console.log('player is ready');
         setTimeout(() => {
           try {
             const p = player as any;
@@ -119,7 +128,6 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
               p.hlsQualitySelector({
                 displayCurrentQuality: true,
               });
-              console.log('Quality selector initialized');
             }
           } catch (e) {
             console.error('Error initializing quality selector:', e);
@@ -127,38 +135,27 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         }, 100);
       });
 
-      // Keyboard shortcuts and Double Tap to Seek
       const handleKeyDown = (e: KeyboardEvent) => {
         if (!player || player.isDisposed()) return;
         
         const key = e.key.toLowerCase();
         if (key === 'f') {
-          if (player.isFullscreen()) {
-            player.exitFullscreen();
-          } else {
-            player.requestFullscreen();
-          }
+          if (player.isFullscreen()) player.exitFullscreen();
+          else player.requestFullscreen();
         } else if (key === 'escape' && player.isFullscreen()) {
           player.exitFullscreen();
         } else if (key === ' ') {
           if (document.activeElement?.tagName !== 'INPUT' && document.activeElement?.tagName !== 'TEXTAREA') {
             e.preventDefault();
-            if (player.paused()) {
-              player.play();
-            } else {
-              player.pause();
-            }
+            if (player.paused()) player.play();
+            else player.pause();
           }
         } else if (key === 'arrowright') {
           const current = player.currentTime();
-          if (typeof current === 'number') {
-            player.currentTime(current + 10);
-          }
+          if (typeof current === 'number') player.currentTime(current + 10);
         } else if (key === 'arrowleft') {
           const current = player.currentTime();
-          if (typeof current === 'number') {
-            player.currentTime(current - 10);
-          }
+          if (typeof current === 'number') player.currentTime(current - 10);
         }
       };
 
@@ -174,6 +171,16 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
     }
   }, [src]);
 
+  useEffect(() => {
+    return () => {
+      if (playerRef.current && !playerRef.current.isDisposed()) {
+        playerRef.current.dispose();
+        playerRef.current = null;
+      }
+      if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current as any);
+    };
+  }, []);
+
   const handleDoubleClick = (e: React.MouseEvent) => {
     if (!playerRef.current) return;
     const rect = e.currentTarget.getBoundingClientRect();
@@ -187,11 +194,8 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
 
   const togglePlay = () => {
     if (playerRef.current) {
-      if (playerRef.current.paused()) {
-        playerRef.current.play();
-      } else {
-        playerRef.current.pause();
-      }
+      if (playerRef.current.paused()) playerRef.current.play();
+      else playerRef.current.pause();
     }
   };
 
@@ -200,15 +204,20 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
       data-vjs-player 
       className="w-full h-full group relative overflow-hidden bg-black"
       onDoubleClick={handleDoubleClick}
-      onTouchStart={() => {
+      onTouchEnd={() => {
         if (!playerRef.current?.paused()) {
           setShowControls(true);
+          if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current as any);
+          controlsTimeoutRef.current = setTimeout(() => {
+            if (!playerRef.current?.paused()) {
+              setShowControls(false);
+            }
+          }, 3000);
         }
       }}
     >
       <div ref={videoRef} className="w-full h-full" />
       
-      {/* Error Message */}
       {error && (
         <div className="absolute inset-0 flex items-center justify-center bg-black/90 z-30 p-6 text-center animate-in fade-in duration-300">
           <div className="max-w-md">
@@ -225,7 +234,6 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         </div>
       )}
       
-      {/* Play/Pause Center Overlay */}
       {isPaused && !error && (
         <div 
           className="absolute inset-0 flex items-center justify-center bg-black/40 cursor-pointer z-10 transition-all duration-300"
@@ -237,7 +245,6 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         </div>
       )}
 
-      {/* Title Overlay (Netflix Style) */}
       <div className={`absolute top-0 left-0 right-0 p-8 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-500 z-20 pointer-events-none ${showControls ? 'opacity-100' : 'opacity-0'}`}>
         <h1 className="text-white text-xl md:text-2xl font-bold drop-shadow-lg">Now Playing</h1>
       </div>
