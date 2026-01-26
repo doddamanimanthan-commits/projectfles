@@ -94,11 +94,50 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
     return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
   };
 
+  const handleVideoClick = (e: React.MouseEvent) => {
+    // Prevent toggling if clicking controls
+    if ((e.target as HTMLElement).closest('.controls-container')) return;
+    togglePlay();
+  };
+
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (!videoRef.current) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    if (x < rect.width / 2) {
+      skip(-10);
+    } else {
+      skip(10);
+    }
+  };
+
+  const [lastTap, setLastTap] = useState(0);
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const now = Date.now();
+    const DOUBLE_TAP_DELAY = 300;
+    if (now - lastTap < DOUBLE_TAP_DELAY) {
+      const rect = e.currentTarget.getBoundingClientRect();
+      const touch = e.changedTouches[0];
+      const x = touch.clientX - rect.left;
+      if (x < rect.width / 2) {
+        skip(-10);
+      } else {
+        skip(10);
+      }
+    } else {
+      handleMouseMove();
+    }
+    setLastTap(now);
+  };
+
   return (
     <div 
       ref={containerRef}
       className="w-full h-full group relative overflow-hidden bg-black flex items-center justify-center cursor-none"
       onMouseMove={handleMouseMove}
+      onClick={handleVideoClick}
+      onDoubleClick={handleDoubleClick}
+      onTouchEnd={handleTouchEnd}
       style={{ cursor: showControls ? 'default' : 'none' }}
     >
       <video
@@ -107,9 +146,8 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
         poster={poster}
         controlsList="nodownload"
         onContextMenu={(e) => e.preventDefault()}
-        className="w-full h-full max-h-screen"
+        className="w-full h-full max-h-screen pointer-events-none"
         playsInline
-        onClick={togglePlay}
       >
         Your browser does not support the video tag.
       </video>
@@ -119,7 +157,7 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
         
         {/* Top Bar */}
         <div className="p-4 md:p-8 flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => window.history.back()} className="text-white hover:bg-white/20">
+          <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); window.history.back(); }} className="text-white hover:bg-white/20">
             <ArrowLeft className="w-6 h-6" />
           </Button>
           <h1 className="text-white text-lg md:text-2xl font-bold truncate drop-shadow-lg">{title}</h1>
@@ -135,7 +173,7 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
         )}
 
         {/* Bottom Controls */}
-        <div className="p-4 md:p-8 space-y-4">
+        <div className="controls-container p-4 md:p-8 space-y-4" onClick={(e) => e.stopPropagation()}>
           {/* Progress Slider */}
           <div className="flex items-center gap-4 group/slider">
             <span className="text-white text-sm font-medium w-12">{formatTime(currentTime)}</span>
@@ -151,17 +189,17 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 md:gap-6">
-              <Button variant="ghost" size="icon" onClick={togglePlay} className="text-white hover:bg-white/20">
+              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); togglePlay(); }} className="text-white hover:bg-white/20">
                 {isPaused ? <Play className="w-6 h-6 fill-current" /> : <Pause className="w-6 h-6 fill-current" />}
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => skip(-10)} className="text-white hover:bg-white/20">
+              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); skip(-10); }} className="text-white hover:bg-white/20">
                 <RotateCcw className="w-6 h-6" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => skip(10)} className="text-white hover:bg-white/20">
+              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); skip(10); }} className="text-white hover:bg-white/20">
                 <RotateCw className="w-6 h-6" />
               </Button>
               <div className="flex items-center gap-2 group/volume">
-                <Button variant="ghost" size="icon" onClick={() => setIsMuted(!isMuted)} className="text-white hover:bg-white/20">
+                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }} className="text-white hover:bg-white/20">
                   {isMuted || volume === 0 ? <VolumeX className="w-6 h-6" /> : <Volume2 className="w-6 h-6" />}
                 </Button>
                 <div className="w-0 overflow-hidden group-hover/volume:w-24 transition-all duration-300">
@@ -177,7 +215,7 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
             </div>
 
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="text-white hover:bg-white/20">
+              <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); toggleFullscreen(); }} className="text-white hover:bg-white/20">
                 <Maximize className="w-6 h-6" />
               </Button>
             </div>
