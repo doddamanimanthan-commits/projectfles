@@ -1,8 +1,13 @@
+import { createClient } from '@supabase/supabase-js';
 import { type User, type InsertUser, type Movie, type InsertMovie } from "@shared/schema";
 import session from "express-session";
 import createMemoryStore from "memorystore";
 
 const MemoryStore = createMemoryStore(session);
+
+const supabaseUrl = 'https://xvxshavvleqbrhwqeoth.supabase.co';
+const supabaseKey = process.env.SUPABASE_KEY!;
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -18,72 +23,201 @@ export interface IStorage {
   sessionStore: session.Store;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private movies: Map<number, Movie>;
+export class SupabaseStorage implements IStorage {
   sessionStore: session.Store;
-  currentUserId: number;
-  currentMovieId: number;
 
   constructor() {
-    this.users = new Map();
-    this.movies = new Map();
-    this.currentUserId = 1;
-    this.currentMovieId = 1;
     this.sessionStore = new MemoryStore({
       checkPeriod: 86400000,
     });
   }
 
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', id)
+        .single();
+      return data || undefined;
+    } catch (err) {
+      console.error("Error fetching user:", err);
+      return undefined;
+    }
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    try {
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('username', username)
+        .single();
+      return data || undefined;
+    } catch (err) {
+      console.error("Error fetching user by username:", err);
+      return undefined;
+    }
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .insert([insertUser])
+        .select()
+        .single();
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error("Error creating user:", error);
+      throw error;
+    }
   }
 
   async getMovies(): Promise<Movie[]> {
-    return Array.from(this.movies.values());
+    try {
+      const { data, error } = await supabase
+        .from('movies')
+        .select('*');
+      if (error) throw error;
+      
+      // Map Supabase snake_case back to camelCase
+      return (data || []).map((m: any) => ({
+        id: m.id,
+        title: m.title,
+        description: m.description,
+        posterUrl: m.poster_url,
+        videoUrl: m.video_url,
+        genre: m.genre,
+        releaseYear: m.release_year,
+        isSeries: m.is_series,
+        episodes: m.episodes
+      }));
+    } catch (err) {
+      console.error("Error fetching movies:", err);
+      return [];
+    }
   }
 
   async getMovie(id: number): Promise<Movie | undefined> {
-    return this.movies.get(id);
+    try {
+      const { data } = await supabase
+        .from('movies')
+        .select('*')
+        .eq('id', id)
+        .single();
+      if (!data) return undefined;
+      
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        posterUrl: data.poster_url,
+        videoUrl: data.video_url,
+        genre: data.genre,
+        releaseYear: data.release_year,
+        isSeries: data.is_series,
+        episodes: data.episodes
+      };
+    } catch (err) {
+      console.error("Error fetching movie:", err);
+      return undefined;
+    }
   }
 
   async createMovie(insertMovie: InsertMovie): Promise<Movie> {
-    const id = this.currentMovieId++;
-    const movie: Movie = { 
-      ...insertMovie, 
-      id, 
-      isSeries: insertMovie.isSeries ?? false,
-      episodes: insertMovie.episodes || "" 
-    };
-    this.movies.set(id, movie);
-    return movie;
+    try {
+      const { title, description, posterUrl, videoUrl, genre, releaseYear, isSeries, episodes } = insertMovie;
+      
+      const supabaseMovie = {
+        title,
+        description,
+        poster_url: posterUrl,
+        video_url: videoUrl,
+        genre,
+        release_year: releaseYear,
+        is_series: isSeries ?? false,
+        episodes: episodes || ""
+      };
+
+      const { data, error } = await supabase
+        .from('movies')
+        .insert([supabaseMovie])
+        .select()
+        .single();
+      
+      if (error) throw error;
+      if (!data) throw new Error("No data returned");
+      
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        posterUrl: data.poster_url,
+        videoUrl: data.video_url,
+        genre: data.genre,
+        releaseYear: data.release_year,
+        isSeries: data.is_series,
+        episodes: data.episodes
+      };
+    } catch (error: any) {
+      console.error("Error in createMovie:", error);
+      throw error;
+    }
   }
 
   async updateMovie(id: number, movieUpdate: Partial<InsertMovie>): Promise<Movie | undefined> {
-    const existing = this.movies.get(id);
-    if (!existing) return undefined;
-    
-    const updated = { ...existing, ...movieUpdate };
-    this.movies.set(id, updated);
-    return updated;
+    try {
+      const supabaseUpdate: any = {};
+      if (movieUpdate.title !== undefined) supabaseUpdate.title = movieUpdate.title;
+      if (movieUpdate.description !== undefined) supabaseUpdate.description = movieUpdate.description;
+      if (movieUpdate.posterUrl !== undefined) supabaseUpdate.poster_url = movieUpdate.posterUrl;
+      if (movieUpdate.videoUrl !== undefined) supabaseUpdate.video_url = movieUpdate.videoUrl;
+      if (movieUpdate.genre !== undefined) supabaseUpdate.genre = movieUpdate.genre;
+      if (movieUpdate.releaseYear !== undefined) supabaseUpdate.release_year = movieUpdate.releaseYear;
+      if (movieUpdate.isSeries !== undefined) supabaseUpdate.is_series = movieUpdate.isSeries;
+      if (movieUpdate.episodes !== undefined) supabaseUpdate.episodes = movieUpdate.episodes;
+
+      const { data, error } = await supabase
+        .from('movies')
+        .update(supabaseUpdate)
+        .eq('id', id)
+        .select()
+        .single();
+      
+      if (error) throw error;
+      if (!data) return undefined;
+
+      return {
+        id: data.id,
+        title: data.title,
+        description: data.description,
+        posterUrl: data.poster_url,
+        videoUrl: data.video_url,
+        genre: data.genre,
+        releaseYear: data.release_year,
+        isSeries: data.is_series,
+        episodes: data.episodes
+      };
+    } catch (err) {
+      console.error("Error updating movie:", err);
+      return undefined;
+    }
   }
 
   async deleteMovie(id: number): Promise<void> {
-    this.movies.delete(id);
+    try {
+      const { error } = await supabase
+        .from('movies')
+        .delete()
+        .eq('id', id);
+      if (error) throw error;
+    } catch (err) {
+      console.error("Error deleting movie:", err);
+      throw err;
+    }
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new SupabaseStorage();
