@@ -52,6 +52,8 @@ export const VideoPlayer = ({ src, poster }: VideoPlayerProps) => {
         src={src}
         poster={poster}
         controls
+        controlsList="nodownload"
+        onContextMenu={(e) => e.preventDefault()}
         className="w-full h-full max-h-screen"
         playsInline
       >
