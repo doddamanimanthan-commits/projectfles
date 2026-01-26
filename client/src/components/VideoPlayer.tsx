@@ -61,8 +61,24 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
     }
   };
 
+  const [skipIndicator, setSkipIndicator] = useState<{ type: 'forward' | 'backward', visible: boolean }>({ type: 'forward', visible: false });
+  const skipTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   const skip = (amount: number) => {
-    if (videoRef.current) videoRef.current.currentTime += amount;
+    if (videoRef.current) {
+      videoRef.current.currentTime += amount;
+      
+      // Show skip indicator
+      setSkipIndicator({
+        type: amount > 0 ? 'forward' : 'backward',
+        visible: true
+      });
+
+      if (skipTimeoutRef.current) clearTimeout(skipTimeoutRef.current);
+      skipTimeoutRef.current = setTimeout(() => {
+        setSkipIndicator(prev => ({ ...prev, visible: false }));
+      }, 500);
+    }
   };
 
   const toggleFullscreen = () => {
@@ -164,10 +180,28 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
         </div>
 
         {/* Center Play/Pause */}
-        {isPaused && !error && (
+        {isPaused && !error && !skipIndicator.visible && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
             <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center rounded-full bg-primary/90 text-white shadow-2xl transform transition-transform scale-100 hover:scale-110">
               <Play className="w-10 h-10 fill-current ml-1.5" />
+            </div>
+          </div>
+        )}
+
+        {/* Skip Indicators */}
+        {skipIndicator.visible && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <div className="flex flex-col items-center gap-2 animate-in zoom-in fade-in duration-300">
+              <div className="w-20 h-20 md:w-24 md:h-24 flex items-center justify-center rounded-full bg-white/20 backdrop-blur-md text-white border border-white/30">
+                {skipIndicator.type === 'forward' ? (
+                  <RotateCw className="w-10 h-10" />
+                ) : (
+                  <RotateCcw className="w-10 h-10" />
+                )}
+              </div>
+              <span className="text-white text-xl font-bold drop-shadow-lg">
+                {skipIndicator.type === 'forward' ? '+10s' : '-10s'}
+              </span>
             </div>
           </div>
         )}
