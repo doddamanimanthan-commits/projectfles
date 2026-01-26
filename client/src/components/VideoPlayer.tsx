@@ -46,6 +46,38 @@ export const VideoPlayer = ({ src, poster, title = "Now Playing" }: VideoPlayerP
     };
   }, [src]);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Don't trigger shortcuts if user is typing in an input
+      if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA') return;
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+        case 'k':
+          e.preventDefault();
+          togglePlay();
+          break;
+        case 'm':
+          setIsMuted(prev => !prev);
+          break;
+        case 'f':
+          toggleFullscreen();
+          break;
+        case 'j':
+        case 'arrowleft':
+          skip(-10);
+          break;
+        case 'l':
+        case 'arrowright':
+          skip(10);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPaused, isMuted, volume]);
+
   const handleMouseMove = () => {
     setShowControls(true);
     if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
