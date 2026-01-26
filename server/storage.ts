@@ -1,9 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 import { type User, type InsertUser, type Movie, type InsertMovie } from "@shared/schema";
-import session from "express-session";
-import createMemoryStore from "memorystore";
-
-const MemoryStore = createMemoryStore(session);
 
 const supabaseUrl = 'https://xvxshavvleqbrhwqeoth.supabase.co';
 const supabaseKey = process.env.SUPABASE_KEY!;
@@ -19,19 +15,9 @@ export interface IStorage {
   createMovie(movie: InsertMovie): Promise<Movie>;
   updateMovie(id: number, movie: Partial<InsertMovie>): Promise<Movie | undefined>;
   deleteMovie(id: number): Promise<void>;
-  
-  sessionStore: session.Store;
 }
 
 export class SupabaseStorage implements IStorage {
-  sessionStore: session.Store;
-
-  constructor() {
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000,
-    });
-  }
-
   async getUser(id: number): Promise<User | undefined> {
     try {
       const { data } = await supabase
@@ -128,6 +114,7 @@ export class SupabaseStorage implements IStorage {
 
   async createMovie(insertMovie: InsertMovie): Promise<Movie> {
     try {
+      // Create a clean object without any 'id' property to ensure auto-increment works
       const { title, description, posterUrl, videoUrl, genre, releaseYear, isSeries, episodes } = insertMovie;
       
       const supabaseMovie = {
@@ -137,9 +124,11 @@ export class SupabaseStorage implements IStorage {
         video_url: videoUrl,
         genre,
         release_year: releaseYear,
-        is_series: isSeries ?? false,
+        is_series: isSeries,
         episodes: episodes || ""
       };
+
+      console.log("Attempting to insert movie into Supabase:", supabaseMovie);
 
       const { data, error } = await supabase
         .from('movies')
@@ -147,8 +136,14 @@ export class SupabaseStorage implements IStorage {
         .select()
         .single();
       
-      if (error) throw error;
-      if (!data) throw new Error("No data returned");
+      if (error) {
+        console.error("Supabase detailed error:", JSON.stringify(error, null, 2));
+        throw new Error(error.message || "Failed to create movie in database");
+      }
+      
+      if (!data) {
+        throw new Error("No data returned from movie creation");
+      }
       
       return {
         id: data.id,
@@ -162,7 +157,7 @@ export class SupabaseStorage implements IStorage {
         episodes: data.episodes
       };
     } catch (error: any) {
-      console.error("Error in createMovie:", error);
+      console.error("Caught error in createMovie:", error.message || error);
       throw error;
     }
   }
