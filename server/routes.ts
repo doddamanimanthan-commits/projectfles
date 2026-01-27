@@ -25,14 +25,17 @@ export async function registerRoutes(
       console.log("Attempting to send email with user:", process.env.EMAIL_USER);
       const transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
-        port: 465,
-        secure: true,
+        port: 587,
+        secure: false, // true for 465, false for other ports
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
         },
-        debug: true, // show debug output
-        logger: true // log information in console
+        tls: {
+          rejectUnauthorized: false
+        },
+        debug: true,
+        logger: true
       });
 
       const mailOptions = {
