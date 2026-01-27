@@ -22,6 +22,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Movie/Series name is required" });
       }
 
+      console.log("Attempting to send email with user:", process.env.EMAIL_USER);
       const transporter = nodemailer.createTransport({
         host: "smtp.gmail.com",
         port: 465,
@@ -30,6 +31,8 @@ export async function registerRoutes(
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS,
         },
+        debug: true, // show debug output
+        logger: true // log information in console
       });
 
       const mailOptions = {
