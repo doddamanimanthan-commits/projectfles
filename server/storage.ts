@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { type User, type InsertUser, type Movie, type InsertMovie } from "@shared/schema";
 
-const supabaseUrl = 'https://xvxshavvleqbrhwqeoth.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
