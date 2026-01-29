@@ -1,30 +1,28 @@
-import { pgTable, text, serial, integer, boolean } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
-  username: text("username").notNull().unique(),
-  password: text("password").notNull(),
+export const usersSchema = z.object({
+  id: z.number(),
+  username: z.string().min(1),
+  password: z.string().min(1),
 });
 
-export const movies = pgTable("movies", {
-  id: serial("id").primaryKey(),
-  title: text("title").notNull(),
-  description: text("description").notNull(),
-  posterUrl: text("poster_url").notNull(),
-  videoUrl: text("video_url").notNull(),
-  genre: text("genre").notNull(),
-  releaseYear: integer("release_year").notNull(),
-  isSeries: boolean("is_series").default(false).notNull(),
-  episodes: text("episodes").default("").notNull(), // JSON array stored as string
+export const moviesSchema = z.object({
+  id: z.number(),
+  title: z.string().min(1),
+  description: z.string().min(1),
+  posterUrl: z.string().min(1),
+  videoUrl: z.string().min(1),
+  genre: z.string().min(1),
+  releaseYear: z.number(),
+  isSeries: z.boolean().default(false),
+  episodes: z.string().default(""),
 });
 
-export const insertUserSchema = createInsertSchema(users);
-export const insertMovieSchema = createInsertSchema(movies).omit({ id: true });
+export const insertUserSchema = usersSchema.omit({ id: true });
+export const insertMovieSchema = moviesSchema.omit({ id: true });
 
-export type User = typeof users.$inferSelect;
+export type User = z.infer<typeof usersSchema>;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 
-export type Movie = typeof movies.$inferSelect;
+export type Movie = z.infer<typeof moviesSchema>;
 export type InsertMovie = z.infer<typeof insertMovieSchema>;
