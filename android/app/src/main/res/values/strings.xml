@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cine Streamer</string>
+    <string name="title_activity_main">Cine Streamer</string>
+    <string name="package_name">com.cinestreamer.app</string>
+    <string name="custom_url_scheme">com.cinestreamer.app</string>
+</resources>
