@@ -1,0 +1,12 @@
+{
+	"appId": "com.cinestreamer.app",
+	"appName": "Cine Streamer",
+	"webDir": "dist/public",
+	"server": {
+		"androidScheme": "https",
+		"cleartext": true,
+		"allowNavigation": [
+			"*"
+		]
+	}
+}
